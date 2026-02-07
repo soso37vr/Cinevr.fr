@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CINEVR.FR - Cinéma VR sur BigScreen</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #ff0000;
+            --secondary: #000000;
+            --bg-main: #000000;
+            --bg-card: #0a0a0a;
+            --text-primary: #ffffff;
+            --text-secondary: #999999;
+            --accent: #ff3333;
+            --gradient-start: var(--primary);
+            --gradient-end: #990000;
+            --border-color: rgba(255, 0, 0, 0.2);
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, var(--primary)10 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, var(--primary)08 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        #root {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            padding: 1.5rem 3rem;
+            background: rgba(0, 0, 0, 0.6);
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px var(--primary), 0 0 40px var(--primary);
+            animation: pulseGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { text-shadow: 0 0 20px var(--primary), 0 0 40px var(--primary); }
+            50% { text-shadow: 0 0 30px var(--primary), 0 0 60px var(--primary), 0 0 80px var(--primary); }
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border-radius: 2px;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: -1;
+        }
+
+        .nav-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .nav-btn:hover::before {
+            left: 0;
+        }
+
+        .nav-btn.active {
+            color: var(--bg-main);
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+        }
+
+        .nav-btn.active::before {
+            left: 0;
+        }
+
+        .container {
+            padding: 3rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .movies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .movie-card {
+            background: var(--bg-card);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border-color);
+        }
+
+        .movie-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 0, 0, 0.2);
+        }
+
+        .movie-poster-container {
+            position: relative;
+            width: 100%;
+            height: 420px;
+            overflow: hidden;
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: opacity 0.3s;
+        }
+
+        .movie-card:hover .movie-poster {
+            opacity: 0;
+        }
+
+        .movie-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            object-fit: cover;
+        }
+
+        .movie-card:hover .movie-video {
+            opacity: 1;
+        }
+
+        .movie-info {
+            padding: 1.5rem;
+        }
+
+        .movie-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+            letter-spacing: 0.05em;
+        }
+
+        .movie-datetime {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .movie-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .movie-code {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--bg-main);
+            padding: 0.5rem 1rem;
+            border-radius: 2px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.15em;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            width: 36px;
+            height: 36px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .delete-btn:hover {
+            background: var(--primary);
+            color: var(--bg-main);
+            transform: scale(1.1);
+        }
+
+        .admin-form, .services-content, .settings-content {
+            background: var(--bg-card);
+            padding: 3rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.9rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn-primary {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--primary);
+            border: none;
+            color: var(--bg-main);
+            padding: 1rem 2.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 0, 0, 0.5);
+        }
+
+        .color-section {
+            margin-bottom: 4rem;
+        }
+
+        .color-section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 1rem;
+        }
+
+        .color-option {
+            aspect-ratio: 1;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-option:hover {
+            transform: scale(1.05);
+            border-color: white;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .color-option.active {
+            border-color: white;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        }
+
+        .color-option .color-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 0.4rem 0.2rem;
+            font-size: 0.65rem;
+            text-align: center;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .color-option:hover .color-name {
+            opacity: 1;
+        }
+
+        .services-content h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 1.2rem;
+            margin-top: 2rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .services-content h3:first-of-type {
+            margin-top: 0;
+        }
+
+        .services-content p {
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .services-content ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .services-content li {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .services-content li:before {
+            content: '—';
+            color: var(--primary);
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .login-box {
+            background: var(--bg-card);
+            padding: 3rem;
+            border-radius: 4px;
+            border: 1px solid var(--primary);
+            box-shadow: 0 20px 60px rgba(255, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .login-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 2rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .error-message {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 1rem;
+            border-radius: 2px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .admin-tab {
+            font-family: 'Space Grotesk', sans-serif;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .admin-tab:hover {
+            color: var(--primary);
+        }
+
+        .admin-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .proposal-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .proposal-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .proposal-poster {
+            width: 100px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 2px;
+            border: 1px solid var(--primary);
+        }
+
+        .proposal-info {
+            flex: 1;
+        }
+
+        .proposal-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .proposal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-accept, .btn-reject {
+            font-family: 'Space Grotesk', sans-serif;
+            border: 1px solid;
+            padding: 0.7rem 1.3rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.1em;
+        }
+
+        .btn-accept {
+            background: transparent;
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+
+        .btn-accept:hover {
+            background: #00ff00;
+            color: var(--bg-main);
+        }
+
+        .btn-reject {
+            background: transparent;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-reject:hover {
+            background: var(--primary);
+            color: var(--bg-main);
+        }
+
+        .volume-control {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .volume-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+        }
+
+        .volume-slider {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--border-color);
+            outline: none;
+            border-radius: 2px;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            cursor: pointer;
+            border-radius: 2px;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            cursor: pointer;
+            border-radius: 2px;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .volume-value {
+            text-align: center;
+            margin-top: 0.8rem;
+            color: var(--primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1.5rem;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+            }
+
+            .nav {
+                gap: 0.5rem;
+            }
+
+            .nav-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.75rem;
+            }
+
+            .container {
+                padding: 2rem 1.5rem;
+            }
+
+            .movies-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .proposal-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .proposal-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const colorThemes = [
+            // Thèmes Sombres
+            { name: 'Noir & Rouge', primary: '#ff0000', secondary: '#000000', gradient: '#990000' },
+            { name: 'Noir & Bleu', primary: '#0099ff', secondary: '#000000', gradient: '#0066cc' },
+            { name: 'Noir & Violet', primary: '#b028ff', secondary: '#000000', gradient: '#7700cc' },
+            { name: 'Noir & Vert', primary: '#00ff41', secondary: '#000000', gradient: '#00cc33' },
+            { name: 'Noir & Or', primary: '#ffd700', secondary: '#000000', gradient: '#ccaa00' },
+            { name: 'Noir & Rose', primary: '#ff0066', secondary: '#000000', gradient: '#cc0052' },
+            { name: 'Noir & Orange', primary: '#ff6600', secondary: '#000000', gradient: '#cc5200' },
+            { name: 'Noir & Cyan', primary: '#00ffff', secondary: '#000000', gradient: '#00cccc' },
+            { name: 'Noir & Jaune', primary: '#ffdd00', secondary: '#000000', gradient: '#ccaa00' },
+            { name: 'Noir & Magenta', primary: '#ff00ff', secondary: '#000000', gradient: '#cc00cc' },
+            { name: 'Noir & Turquoise', primary: '#00fff5', secondary: '#000000', gradient: '#00ccc4' },
+            { name: 'Noir & Lime', primary: '#bbff00', secondary: '#000000', gradient: '#99cc00' },
+            { name: 'Noir & Indigo', primary: '#6633ff', secondary: '#000000', gradient: '#4400cc' },
+            { name: 'Noir & Corail', primary: '#ff6b6b', secondary: '#000000', gradient: '#cc5555' },
+            { name: 'Gris & Rouge', primary: '#ff0000', secondary: '#1a1a1a', gradient: '#cc0000' },
+            { name: 'Gris & Bleu', primary: '#00aaff', secondary: '#1a1a1a', gradient: '#0088cc' },
+            { name: 'Gris & Violet', primary: '#aa33ff', secondary: '#1a1a1a', gradient: '#7700cc' },
+            { name: 'Gris & Vert', primary: '#00ff66', secondary: '#1a1a1a', gradient: '#00cc52' },
+            { name: 'Gris & Orange', primary: '#ff8800', secondary: '#1a1a1a', gradient: '#cc6600' },
+            { name: 'Gris & Rose', primary: '#ff3366', secondary: '#1a1a1a', gradient: '#cc2952' },
+            { name: 'Gris & Cyan', primary: '#00ddff', secondary: '#1a1a1a', gradient: '#00aacc' },
+            { name: 'Gris & Jaune', primary: '#ffee00', secondary: '#1a1a1a', gradient: '#ccbb00' },
+            
+            // Thèmes Clairs
+            { name: 'Blanc & Rouge', primary: '#ff0000', secondary: '#ffffff', gradient: '#cc0000' },
+            { name: 'Blanc & Bleu', primary: '#0066ff', secondary: '#ffffff', gradient: '#0044cc' },
+            { name: 'Blanc & Violet', primary: '#8833ff', secondary: '#ffffff', gradient: '#6600cc' },
+            { name: 'Blanc & Vert', primary: '#00cc66', secondary: '#ffffff', gradient: '#009950' },
+            { name: 'Blanc & Orange', primary: '#ff6600', secondary: '#ffffff', gradient: '#cc5200' },
+            { name: 'Blanc & Cyan', primary: '#00bbdd', secondary: '#ffffff', gradient: '#0099bb' },
+            { name: 'Blanc & Rose', primary: '#ff0077', secondary: '#ffffff', gradient: '#cc0055' },
+            { name: 'Blanc & Magenta', primary: '#cc00cc', secondary: '#ffffff', gradient: '#990099' },
+            { name: 'Blanc & Turquoise', primary: '#00cccc', secondary: '#ffffff', gradient: '#009999' },
+            { name: 'Blanc & Or', primary: '#ccaa00', secondary: '#ffffff', gradient: '#aa8800' },
+            { name: 'Blanc & Indigo', primary: '#6644ff', secondary: '#ffffff', gradient: '#4422cc' },
+            { name: 'Blanc & Corail', primary: '#ff6666', secondary: '#ffffff', gradient: '#cc4444' }
+        ];
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('diffusions');
+            const [movies, setMovies] = useState([]);
+            const [proposals, setProposals] = useState([]);
+            const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+            const [showAdminLogin, setShowAdminLogin] = useState(false);
+            const [adminPassword, setAdminPassword] = useState('');
+            const [loginError, setLoginError] = useState('');
+            const [currentTheme, setCurrentTheme] = useState(0);
+            const [adminSubTab, setAdminSubTab] = useState('diffusions');
+            const [selectedProposal, setSelectedProposal] = useState(null);
+            const [volume, setVolume] = useState(50);
+            const [formData, setFormData] = useState({
+                title: '',
+                poster: '',
+                trailer: '',
+                date: '',
+                time: '',
+                description: '',
+                code: ''
+            });
+            const [proposalFormData, setProposalFormData] = useState({
+                title: '',
+                poster: ''
+            });
+
+            const clickSoundRef = useRef(null);
+            const ambientSoundRef = useRef(null);
+
+            useEffect(() => {
+                // Créer les sons
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const audioContext = new AudioContext();
+
+                // Son de clic
+                const createClickSound = () => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3 * (volume / 100), audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                };
+
+                clickSoundRef.current = createClickSound;
+
+                // Son d'ambiance
+                const createAmbientSound = () => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    const filter = audioContext.createBiquadFilter();
+                    
+                    oscillator.connect(filter);
+                    filter.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(60, audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(200, audioContext.currentTime);
+                    
+                    gainNode.gain.setValueAtTime(0.05 * (volume / 100), audioContext.currentTime);
+                    
+                    oscillator.start();
+                    ambientSoundRef.current = { oscillator, gainNode };
+                };
+
+                createAmbientSound();
+
+                const savedMovies = localStorage.getItem('cinevr_movies');
+                if (savedMovies) {
+                    setMovies(JSON.parse(savedMovies));
+                }
+
+                const savedProposals = localStorage.getItem('cinevr_proposals');
+                if (savedProposals) {
+                    setProposals(JSON.parse(savedProposals));
+                }
+
+                const savedTheme = localStorage.getItem('cinevr_theme');
+                if (savedTheme) {
+                    const themeIndex = parseInt(savedTheme);
+                    setCurrentTheme(themeIndex);
+                    applyTheme(themeIndex);
+                }
+
+                const savedVolume = localStorage.getItem('cinevr_volume');
+                if (savedVolume) {
+                    setVolume(parseInt(savedVolume));
+                }
+
+                return () => {
+                    if (ambientSoundRef.current) {
+                        ambientSoundRef.current.oscillator.stop();
+                    }
+                };
+            }, []);
+
+            useEffect(() => {
+                if (ambientSoundRef.current) {
+                    ambientSoundRef.current.gainNode.gain.setValueAtTime(0.05 * (volume / 100), ambientSoundRef.current.gainNode.context.currentTime);
+                }
+                localStorage.setItem('cinevr_volume', volume.toString());
+            }, [volume]);
+
+            const playClickSound = () => {
+                if (clickSoundRef.current) {
+                    clickSoundRef.current();
+                }
+            };
+
+            const pauseAmbient = () => {
+                if (ambientSoundRef.current) {
+                    ambientSoundRef.current.gainNode.gain.setValueAtTime(0, ambientSoundRef.current.gainNode.context.currentTime);
+                }
+            };
+
+            const resumeAmbient = () => {
+                if (ambientSoundRef.current) {
+                    ambientSoundRef.current.gainNode.gain.setValueAtTime(0.05 * (volume / 100), ambientSoundRef.current.gainNode.context.currentTime);
+                }
+            };
+
+            const applyTheme = (index) => {
+                const theme = colorThemes[index];
+                document.documentElement.style.setProperty('--primary', theme.primary);
+                document.documentElement.style.setProperty('--secondary', theme.secondary);
+                document.documentElement.style.setProperty('--gradient-end', theme.gradient);
+                
+                const isLightTheme = theme.secondary === '#ffffff';
+                if (isLightTheme) {
+                    document.documentElement.style.setProperty('--bg-main', '#ffffff');
+                    document.documentElement.style.setProperty('--bg-card', '#f5f5f5');
+                    document.documentElement.style.setProperty('--text-primary', '#000000');
+                    document.documentElement.style.setProperty('--text-secondary', '#666666');
+                    document.documentElement.style.setProperty('--border-color', `${theme.primary}30`);
+                } else {
+                    document.documentElement.style.setProperty('--bg-main', theme.secondary);
+                    document.documentElement.style.setProperty('--bg-card', theme.secondary === '#000000' ? '#0a0a0a' : '#0f0f0f');
+                    document.documentElement.style.setProperty('--text-primary', '#ffffff');
+                    document.documentElement.style.setProperty('--text-secondary', '#999999');
+                    document.documentElement.style.setProperty('--border-color', `${theme.primary}30`);
+                }
+            };
+
+            const handleThemeChange = (index) => {
+                playClickSound();
+                setCurrentTheme(index);
+                applyTheme(index);
+                localStorage.setItem('cinevr_theme', index.toString());
+            };
+
+            const handleAdminLogin = (e) => {
+                e.preventDefault();
+                playClickSound();
+                if (adminPassword === 'soso373728') {
+                    setIsAdminLoggedIn(true);
+                    setShowAdminLogin(false);
+                    setLoginError('');
+                    setActiveTab('admin');
+                } else {
+                    setLoginError('Code incorrect');
+                }
+            };
+
+            const handleFormChange = (e) => {
+                setFormData({
+                    ...formData,
+                    [e.target.name]: e.target.value
+                });
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                playClickSound();
+                const newMovie = {
+                    ...formData,
+                    id: Date.now()
+                };
+                const updatedMovies = [...movies, newMovie];
+                setMovies(updatedMovies);
+                localStorage.setItem('cinevr_movies', JSON.stringify(updatedMovies));
+                
+                if (selectedProposal) {
+                    const updatedProposals = proposals.filter(p => p.id !== selectedProposal.id);
+                    setProposals(updatedProposals);
+                    localStorage.setItem('cinevr_proposals', JSON.stringify(updatedProposals));
+                    setSelectedProposal(null);
+                }
+                
+                setFormData({
+                    title: '',
+                    poster: '',
+                    trailer: '',
+                    date: '',
+                    time: '',
+                    description: '',
+                    code: ''
+                });
+                alert('Film publié avec succès !');
+            };
+
+            const handleDeleteMovie = (movieId) => {
+                playClickSound();
+                if (window.confirm('Êtes-vous sûr de vouloir supprimer ce film ?')) {
+                    const updatedMovies = movies.filter(movie => movie.id !== movieId);
+                    setMovies(updatedMovies);
+                    localStorage.setItem('cinevr_movies', JSON.stringify(updatedMovies));
+                }
+            };
+
+            const handleProposalFormChange = (e) => {
+                setProposalFormData({
+                    ...proposalFormData,
+                    [e.target.name]: e.target.value
+                });
+            };
+
+            const handleProposalSubmit = (e) => {
+                e.preventDefault();
+                playClickSound();
+                const newProposal = {
+                    ...proposalFormData,
+                    id: Date.now(),
+                    status: 'pending'
+                };
+                const updatedProposals = [...proposals, newProposal];
+                setProposals(updatedProposals);
+                localStorage.setItem('cinevr_proposals', JSON.stringify(updatedProposals));
+                setProposalFormData({
+                    title: '',
+                    poster: ''
+                });
+                alert('Votre proposition a été envoyée avec succès !');
+            };
+
+            const handleAcceptProposal = (proposalId) => {
+                playClickSound();
+                const proposal = proposals.find(p => p.id === proposalId);
+                if (proposal) {
+                    setSelectedProposal(proposal);
+                    setFormData({
+                        title: proposal.title,
+                        poster: proposal.poster,
+                        trailer: '',
+                        date: '',
+                        time: '',
+                        description: '',
+                        code: ''
+                    });
+                    setAdminSubTab('diffusions');
+                }
+            };
+
+            const handleRejectProposal = (proposalId) => {
+                playClickSound();
+                if (window.confirm('Êtes-vous sûr de vouloir rejeter cette proposition ?')) {
+                    const updatedProposals = proposals.filter(p => p.id !== proposalId);
+                    setProposals(updatedProposals);
+                    localStorage.setItem('cinevr_proposals', JSON.stringify(updatedProposals));
+                }
+            };
+
+            const handleAdminClick = () => {
+                playClickSound();
+                if (!isAdminLoggedIn) {
+                    setShowAdminLogin(true);
+                } else {
+                    setActiveTab('admin');
+                }
+            };
+
+            const handleTabClick = (tab) => {
+                playClickSound();
+                setActiveTab(tab);
+            };
+
+            return (
+                <>
+                    <div className="header">
+                        <div className="logo">CINEVR.FR</div>
+                        <div className="nav">
+                            <button 
+                                className={`nav-btn ${activeTab === 'diffusions' ? 'active' : ''}`}
+                                onClick={() => handleTabClick('diffusions')}
+                            >
+                                Diffusions
+                            </button>
+                            <button 
+                                className={`nav-btn ${activeTab === 'propose' ? 'active' : ''}`}
+                                onClick={() => handleTabClick('propose')}
+                            >
+                                Proposer
+                            </button>
+                            <button 
+                                className={`nav-btn ${activeTab === 'services' ? 'active' : ''}`}
+                                onClick={() => handleTabClick('services')}
+                            >
+                                Services
+                            </button>
+                            <button 
+                                className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
+                                onClick={() => handleTabClick('settings')}
+                            >
+                                Paramètres
+                            </button>
+                            <button 
+                                className={`nav-btn ${activeTab === 'admin' ? 'active' : ''}`}
+                                onClick={handleAdminClick}
+                            >
+                                Admin
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="container">
+                        {activeTab === 'diffusions' && (
+                            <>
+                                <h2 className="section-title">Nos Diffusions VR</h2>
+                                {movies.length === 0 ? (
+                                    <p style={{textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1rem'}}>
+                                        Aucune diffusion prévue pour le moment.
+                                    </p>
+                                ) : (
+                                    <div className="movies-grid">
+                                        {movies.map(movie => (
+                                            <div key={movie.id} className="movie-card">
+                                                {isAdminLoggedIn && (
+                                                    <button 
+                                                        className="delete-btn"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteMovie(movie.id);
+                                                        }}
+                                                        title="Supprimer"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                )}
+                                                <div className="movie-poster-container">
+                                                    <img src={movie.poster} alt={movie.title} className="movie-poster" />
+                                                    <video 
+                                                        className="movie-video"
+                                                        src={movie.trailer}
+                                                        muted
+                                                        loop
+                                                        playsInline
+                                                        onMouseEnter={(e) => {
+                                                            e.target.play();
+                                                            pauseAmbient();
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.target.pause();
+                                                            e.target.currentTime = 0;
+                                                            resumeAmbient();
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="movie-info">
+                                                    <h3 className="movie-title">{movie.title}</h3>
+                                                    <div className="movie-datetime">
+                                                        <span>{movie.date}</span>
+                                                        <span>{movie.time}</span>
+                                                    </div>
+                                                    <p className="movie-description">{movie.description}</p>
+                                                    <span className="movie-code">{movie.code}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {activeTab === 'propose' && (
+                            <>
+                                <h2 className="section-title">Proposer un Film</h2>
+                                <div className="services-content" style={{maxWidth: '800px', margin: '0 auto'}}>
+                                    <p style={{fontSize: '1rem', textAlign: 'center', marginBottom: '2rem'}}>
+                                        Proposez un film à diffuser sur CINEVR.FR.
+                                    </p>
+                                    
+                                    <form onSubmit={handleProposalSubmit}>
+                                        <div className="form-group">
+                                            <label>Titre</label>
+                                            <input
+                                                type="text"
+                                                name="title"
+                                                value={proposalFormData.title}
+                                                onChange={handleProposalFormChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Affiche (URL)</label>
+                                            <input
+                                                type="url"
+                                                name="poster"
+                                                value={proposalFormData.poster}
+                                                onChange={handleProposalFormChange}
+                                                required
+                                            />
+                                        </div>
+                                        <button type="submit" className="btn-primary" style={{width: '100%'}}>
+                                            Envoyer
+                                        </button>
+                                    </form>
+                                </div>
+                            </>
+                        )}
+
+                        {activeTab === 'services' && (
+                            <div className="services-content">
+                                <h2 className="section-title">Nos Services</h2>
+                                <h3>Diffusion VR Gratuite</h3>
+                                <p>
+                                    Films en haute qualité sur BigScreen VR dans un environnement immersif totalement gratuit.
+                                </p>
+
+                                <h3>Plateforme Communautaire</h3>
+                                <p>
+                                    Proposez vos films préférés. Les administrateurs examinent chaque proposition et organisent les diffusions.
+                                </p>
+
+                                <h3>Ce que nous offrons</h3>
+                                <ul>
+                                    <li>Diffusions gratuites sur BigScreen VR</li>
+                                    <li>Système de propositions ouvert</li>
+                                    <li>Qualité optimisée pour la VR</li>
+                                    <li>Programmation communautaire</li>
+                                    <li>Support technique</li>
+                                </ul>
+                            </div>
+                        )}
+
+                        {activeTab === 'settings' && (
+                            <div className="settings-content">
+                                <h2 className="section-title">Paramètres</h2>
+                                
+                                <div className="volume-control">
+                                    <div className="volume-label">Volume des Sons</div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={volume}
+                                        onChange={(e) => setVolume(parseInt(e.target.value))}
+                                        className="volume-slider"
+                                    />
+                                    <div className="volume-value">{volume}%</div>
+                                </div>
+
+                                <div className="color-section">
+                                    <h3 className="color-section-title">Thèmes Sombres</h3>
+                                    <div className="color-grid">
+                                        {colorThemes.slice(0, 22).map((theme, index) => (
+                                            <div
+                                                key={index}
+                                                className={`color-option ${currentTheme === index ? 'active' : ''}`}
+                                                style={{
+                                                    background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.gradient} 100%)`
+                                                }}
+                                                onClick={() => handleThemeChange(index)}
+                                            >
+                                                <div className="color-name">{theme.name}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="color-section">
+                                    <h3 className="color-section-title">Thèmes Clairs</h3>
+                                    <div className="color-grid">
+                                        {colorThemes.slice(22).map((theme, index) => {
+                                            const actualIndex = index + 22;
+                                            return (
+                                                <div
+                                                    key={actualIndex}
+                                                    className={`color-option ${currentTheme === actualIndex ? 'active' : ''}`}
+                                                    style={{
+                                                        background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.gradient} 100%)`
+                                                    }}
+                                                    onClick={() => handleThemeChange(actualIndex)}
+                                                >
+                                                    <div className="color-name">{theme.name}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'admin' && isAdminLoggedIn && (
+                            <div className="admin-form">
+                                <h2 className="section-title">Admin</h2>
+                                
+                                <div className="admin-tabs">
+                                    <button 
+                                        className={`admin-tab ${adminSubTab === 'diffusions' ? 'active' : ''}`}
+                                        onClick={() => {
+                                            playClickSound();
+                                            setAdminSubTab('diffusions');
+                                        }}
+                                    >
+                                        Publier
+                                    </button>
+                                    <button 
+                                        className={`admin-tab ${adminSubTab === 'proposals' ? 'active' : ''}`}
+                                        onClick={() => {
+                                            playClickSound();
+                                            setAdminSubTab('proposals');
+                                        }}
+                                    >
+                                        Propositions ({proposals.length})
+                                    </button>
+                                </div>
+
+                                {adminSubTab === 'diffusions' && (
+                                    <form onSubmit={handleSubmit}>
+                                        <div className="form-group">
+                                            <label>Titre</label>
+                                            <input
+                                                type="text"
+                                                name="title"
+                                                value={formData.title}
+                                                onChange={handleFormChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Affiche (URL)</label>
+                                            <input
+                                                type="url"
+                                                name="poster"
+                                                value={formData.poster}
+                                                onChange={handleFormChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Vidéo (URL MP4 directe)</label>
+                                            <input
+                                                type="url"
+                                                name="trailer"
+                                                value={formData.trailer}
+                                                onChange={handleFormChange}
+                                                required
+                                                placeholder="Ex: https://example.com/video.mp4"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Date</label>
+                                            <input
+                                                type="date"
+                                                name="date"
+                                                value={formData.date}
+                                                onChange={handleFormChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Heure</label>
+                                            <input
+                                                type="time"
+                                                name="time"
+                                                value={formData.time}
+                                                onChange={handleFormChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Description</label>
+                                            <textarea
+                                                name="description"
+                                                value={formData.description}
+                                                onChange={handleFormChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Code BigScreen</label>
+                                            <input
+                                                type="text"
+                                                name="code"
+                                                value={formData.code}
+                                                onChange={handleFormChange}
+                                                required
+                                            />
+                                        </div>
+                                        <button type="submit" className="btn-primary">
+                                            Publier
+                                        </button>
+                                    </form>
+                                )}
+
+                                {adminSubTab === 'proposals' && (
+                                    <div>
+                                        {proposals.length === 0 ? (
+                                            <p style={{textAlign: 'center', color: 'var(--text-secondary)', padding: '3rem'}}>
+                                                Aucune proposition.
+                                            </p>
+                                        ) : (
+                                            proposals.map(proposal => (
+                                                <div key={proposal.id} className="proposal-card">
+                                                    <img src={proposal.poster} alt={proposal.title} className="proposal-poster" />
+                                                    <div className="proposal-info">
+                                                        <h3 className="proposal-title">{proposal.title}</h3>
+                                                        <p style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>
+                                                            Communauté
+                                                        </p>
+                                                        <div className="proposal-actions">
+                                                            <button 
+                                                                className="btn-accept"
+                                                                onClick={() => handleAcceptProposal(proposal.id)}
+                                                            >
+                                                                Accepter
+                                                            </button>
+                                                            <button 
+                                                                className="btn-reject"
+                                                                onClick={() => handleRejectProposal(proposal.id)}
+                                                            >
+                                                                Rejeter
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {showAdminLogin && (
+                        <div className="login-overlay" onClick={() => setShowAdminLogin(false)}>
+                            <div className="login-box" onClick={(e) => e.stopPropagation()}>
+                                <h2 className="login-title">Admin</h2>
+                                {loginError && <div className="error-message">{loginError}</div>}
+                                <form onSubmit={handleAdminLogin}>
+                                    <div className="form-group">
+                                        <label>Code</label>
+                                        <input
+                                            type="password"
+                                            value={adminPassword}
+                                            onChange={(e) => setAdminPassword(e.target.value)}
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <button type="submit" className="btn-primary" style={{width: '100%'}}>
+                                        Connexion
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
