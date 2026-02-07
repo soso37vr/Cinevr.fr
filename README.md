@@ -82,10 +82,10 @@ Le projet fonctionne **entièrement côté client** (aucun backend requis).
 
 ## ▶️ Installation & utilisation
 
-1. Cloner le dépôt :
+1. Copier Coller L'url:
 
 ```bash
-git clone https://github.com/votre-compte/cinevr.git
+https://github.com/user-attachments/files/25150845/cinevr.4.html
 ```
 
 2. Ouvrir le fichier :
